@@ -72,8 +72,14 @@ const Practice: React.FC<PracticeProps> = ({ gradeLevel, useNikud, onScenarioCre
         : await generatePracticeScenario(input, gradeLevel, useNikud, selectedAtmosphere);
       setScenario(data);
       onScenarioCreated?.(data.text);
-    } catch (e) {
-      alert("חלה שגיאה ביצירת הטקסט. נסו שוב.");
+    } catch (e: any) {
+      console.error('Error creating text:', e);
+      const errorMessage = e?.message || 'חלה שגיאה ביצירת הטקסט';
+      if (errorMessage.includes('API_KEY') || errorMessage.includes('not configured')) {
+        alert('שגיאה: מפתח API לא מוגדר. אנא ודאו שה-API_KEY מוגדר ב-GitHub Secrets וה-workflow רץ מחדש.');
+      } else {
+        alert(`חלה שגיאה ביצירת הטקסט: ${errorMessage}. נסו שוב.`);
+      }
     } finally {
       setIsLoading(false);
     }

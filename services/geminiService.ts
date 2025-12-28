@@ -4,10 +4,22 @@ import { GradeLevel, WorksheetData, DiscoveryQuestion, AdjectiveTask, PracticeSc
 import { AtmosphereType, AtmosphereAnalysis, AtmosphereElement, AtmosphereExercise } from "../types/atmosphere.types";
 
 const getAI = () => {
-  const apiKey = process.env.API_KEY || (window as any).__API_KEY__;
-  if (!apiKey) {
-    throw new Error('API_KEY is not configured. Please set it in GitHub Secrets and rebuild.');
+  // Try multiple ways to get the API key
+  const apiKey = 
+    process.env.API_KEY || 
+    process.env.GEMINI_API_KEY ||
+    (typeof window !== 'undefined' && (window as any).__API_KEY__) ||
+    (typeof window !== 'undefined' && (window as any).process?.env?.API_KEY) ||
+    '';
+  
+  if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey.trim() === '') {
+    console.error('API_KEY is missing or empty:', {
+      'process.env.API_KEY': process.env.API_KEY,
+      'window.__API_KEY__': typeof window !== 'undefined' ? (window as any).__API_KEY__ : 'N/A'
+    });
+    throw new Error('API_KEY is not configured. Please set API_KEY in GitHub Secrets (Settings > Secrets and variables > Actions) and rebuild the app by running the workflow again.');
   }
+  
   return new GoogleGenAI({ apiKey });
 };
 
