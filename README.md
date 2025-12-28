@@ -16,6 +16,35 @@
 - 🔊 **קריינות**: הפקת קריינות קולית לטקסטים
 - 📄 **ייצוא**: הדפסה וייצוא ל-Word ו-HTML
 
+## 📤 העלאת הפרויקט ל-GitHub
+
+### שימוש בסקריפט האוטומטי (מומלץ)
+
+**ב-Windows (PowerShell):**
+```powershell
+.\deploy-to-github.ps1
+```
+
+**ב-Linux/Mac:**
+```bash
+chmod +x deploy-to-github.sh
+./deploy-to-github.sh
+```
+
+הסקריפט ינחה אתכם בתהליך:
+1. יצירת repository ב-GitHub
+2. הגדרת remote
+3. העלאת הקוד
+
+### העלאה ידנית
+
+1. צרו repository חדש ב-[GitHub](https://github.com/new)
+2. הרצו:
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   git push -u origin main
+   ```
+
 ## 🚀 התקנה והרצה
 
 ### דרישות מוקדמות
