@@ -31,12 +31,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Check if API_KEY secret exists
+        run: |
+          if [ -z "${{ secrets.API_KEY }}" ]; then
+            echo "⚠️ Warning: API_KEY secret is not set. Build will continue but app may not work correctly."
+            echo "Please add API_KEY secret in Settings > Secrets and variables > Actions"
+          else
+            echo "✅ API_KEY secret is set"
+          fi
+      
       - name: Build
         run: npm run build
         env:
-          API_KEY: ${{ secrets.API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.API_KEY }}
+          API_KEY: ${{ secrets.API_KEY || '' }}
+          GEMINI_API_KEY: ${{ secrets.API_KEY || '' }}
           NODE_ENV: production
+        continue-on-error: false
+      
+      - name: Check build output
+        run: |
+          if [ -d "dist" ]; then
+            echo "✅ Build successful - dist folder exists"
+            ls -la dist/
+          else
+            echo "❌ Build failed - dist folder not found"
+            exit 1
+          fi
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
