@@ -6,6 +6,10 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
     const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || env.API_KEY || env.GEMINI_API_KEY || '';
     
+    if (!apiKey && mode === 'production') {
+      console.warn('⚠️ Warning: API_KEY is not set. The app will not work correctly.');
+    }
+    
     return {
       base: mode === 'production' ? '/mental-imagery-app/' : '/',
       server: {
@@ -15,7 +19,8 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(apiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(apiKey)
+        'process.env.GEMINI_API_KEY': JSON.stringify(apiKey),
+        '__API_KEY__': JSON.stringify(apiKey)
       },
       resolve: {
         alias: {

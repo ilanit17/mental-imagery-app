@@ -3,7 +3,13 @@ import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { GradeLevel, WorksheetData, DiscoveryQuestion, AdjectiveTask, PracticeScenario, WordImageMatchExercise } from "../types";
 import { AtmosphereType, AtmosphereAnalysis, AtmosphereElement, AtmosphereExercise } from "../types/atmosphere.types";
 
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+  const apiKey = process.env.API_KEY || (window as any).__API_KEY__;
+  if (!apiKey) {
+    throw new Error('API_KEY is not configured. Please set it in GitHub Secrets and rebuild.');
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const getFallbackImageUrl = (prompt: string) => {
   const cleanPrompt = prompt.split(',')[0].replace(/[^a-zA-Z ]/g, "").trim();

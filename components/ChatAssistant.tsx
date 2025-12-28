@@ -40,7 +40,11 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ gradeLevel, useNikud }) =
     setLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const apiKey = process.env.API_KEY || (window as any).__API_KEY__;
+      if (!apiKey) {
+        throw new Error('API_KEY is not configured');
+      }
+      const ai = new GoogleGenAI({ apiKey });
       const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: {
