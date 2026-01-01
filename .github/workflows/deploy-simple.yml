@@ -32,7 +32,19 @@ jobs:
         run: npm run build
         env:
           API_KEY: ${{ secrets.API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.API_KEY }}
           NODE_ENV: production
+        continue-on-error: false
+      
+      - name: Verify API_KEY in build
+        run: |
+          if [ -z "${{ secrets.API_KEY }}" ]; then
+            echo "❌ ERROR: API_KEY secret is not set!"
+            echo "Please go to Settings > Secrets and variables > Actions and add API_KEY"
+            exit 1
+          else
+            echo "✅ API_KEY secret is set (length: ${#API_KEY} characters)"
+          fi
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
