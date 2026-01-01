@@ -408,12 +408,13 @@ const scenarioSchema = {
 };
 
 export const generatePracticeScenario = async (topic: string, grade: GradeLevel, useNikud: boolean = false, atmosphereType?: AtmosphereType): Promise<PracticeScenario> => {
-  const ai = getAI();
-  
-  let atmosphereInstruction = '';
-  if (atmosphereType) {
-    const elements = ATMOSPHERE_ELEMENTS[atmosphereType];
-    atmosphereInstruction = `
+  try {
+    const ai = getAI();
+    
+    let atmosphereInstruction = '';
+    if (atmosphereType) {
+      const elements = ATMOSPHERE_ELEMENTS[atmosphereType];
+      atmosphereInstruction = `
     חשוב מאוד: צור טקסט עם אווירה של ${atmosphereType === 'tension' ? 'מתח' : 
       atmosphereType === 'anticipation' ? 'ציפייה' :
       atmosphereType === 'sadness' ? 'עצב' :
@@ -427,32 +428,70 @@ export const generatePracticeScenario = async (topic: string, grade: GradeLevel,
     - תארים: ${elements.adjectives.join(', ')}
     - סימני פיסוק: ${elements.punctuation.join(', ')}
     `;
-  }
-  
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `צור תרגיל הדמיה מקיף על הנושא: "${topic}". 
+    }
+    
+    const prompt = `צור תרגיל הדמיה מקיף על הנושא: "${topic}". 
     ${atmosphereInstruction}
     ${LOGIC_RULES}
-    רמה: ${grade}. ${useNikud ? 'נקד הכל.' : ''}`,
-    config: { responseMimeType: "application/json", responseSchema: scenarioSchema }
-  });
-  const result = JSON.parse(response.text || '{}');
-  
-  // הוסף את אלמנטי האווירה אם נבחר סוג אווירה
-  if (atmosphereType) {
-    const elements: AtmosphereElement[] = [
-      ...ATMOSPHERE_ELEMENTS[atmosphereType].actions.map(a => ({ type: 'action' as const, content: a })),
-      ...ATMOSPHERE_ELEMENTS[atmosphereType].dialogue.map(d => ({ type: 'dialogue' as const, content: d })),
-      ...ATMOSPHERE_ELEMENTS[atmosphereType].colors.map(c => ({ type: 'color' as const, content: c })),
-      ...ATMOSPHERE_ELEMENTS[atmosphereType].sounds.map(s => ({ type: 'sound' as const, content: s })),
-      ...ATMOSPHERE_ELEMENTS[atmosphereType].adjectives.map(a => ({ type: 'adjective' as const, content: a })),
-    ];
-    (result as any).atmosphereElements = elements;
-    (result as any).atmosphereType = atmosphereType;
+    רמה: ${grade}. ${useNikud ? 'נקד הכל.' : ''}`;
+    
+    console.log('Generating scenario with prompt:', prompt.substring(0, 100) + '...');
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: { responseMimeType: "application/json", responseSchema: scenarioSchema }
+    });
+    
+    if (!response.text) {
+      throw new Error('No response text from AI. Response: ' + JSON.stringify(response));
+    }
+    
+    console.log('AI Response received, length:', response.text.length);
+    
+    let result: PracticeScenario;
+    try {
+      result = JSON.parse(response.text);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Response text:', response.text);
+      throw new Error('Failed to parse AI response as JSON. Response: ' + response.text.substring(0, 200));
+    }
+    
+    // Validate required fields
+    if (!result.text) {
+      throw new Error('AI response missing required field "text". Response: ' + JSON.stringify(result));
+    }
+    
+    if (!result.questions || !Array.isArray(result.questions)) {
+      result.questions = [];
+    }
+    
+    if (!result.wordImageMatches || !Array.isArray(result.wordImageMatches)) {
+      result.wordImageMatches = [];
+    }
+    
+    // הוסף את אלמנטי האווירה אם נבחר סוג אווירה
+    if (atmosphereType) {
+      const elements: AtmosphereElement[] = [
+        ...ATMOSPHERE_ELEMENTS[atmosphereType].actions.map(a => ({ type: 'action' as const, content: a })),
+        ...ATMOSPHERE_ELEMENTS[atmosphereType].dialogue.map(d => ({ type: 'dialogue' as const, content: d })),
+        ...ATMOSPHERE_ELEMENTS[atmosphereType].colors.map(c => ({ type: 'color' as const, content: c })),
+        ...ATMOSPHERE_ELEMENTS[atmosphereType].sounds.map(s => ({ type: 'sound' as const, content: s })),
+        ...ATMOSPHERE_ELEMENTS[atmosphereType].adjectives.map(a => ({ type: 'adjective' as const, content: a })),
+      ];
+      (result as any).atmosphereElements = elements;
+      (result as any).atmosphereType = atmosphereType;
+    }
+    
+    return result;
+  } catch (error: any) {
+    console.error('Error in generatePracticeScenario:', error);
+    if (error.message?.includes('API_KEY')) {
+      throw error;
+    }
+    throw new Error(`Failed to generate practice scenario: ${error.message || 'Unknown error'}`);
   }
-  
-  return result;
 };
 
 export const analyzeExistingTextForPractice = async (text: string, grade: GradeLevel, useNikud: boolean = false): Promise<PracticeScenario> => {
