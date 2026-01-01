@@ -28,7 +28,7 @@ jobs:
           node-version: '18'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
       
       - name: Check if API_KEY secret exists
         run: |
