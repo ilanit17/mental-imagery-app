@@ -28,6 +28,23 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      - name: Verify API_KEY secret exists
+        run: |
+          if [ -z "${{ secrets.API_KEY }}" ]; then
+            echo "❌ ERROR: API_KEY secret is not set!"
+            echo ""
+            echo "Please follow these steps:"
+            echo "1. Go to: https://github.com/ilanit17/mental-imagery-app/settings/secrets/actions"
+            echo "2. Click 'New repository secret'"
+            echo "3. Name: API_KEY"
+            echo "4. Value: Your Google Gemini API key"
+            echo "5. Click 'Add secret'"
+            echo "6. Run this workflow again"
+            exit 1
+          else
+            echo "✅ API_KEY secret is set and ready for build"
+          fi
+      
       - name: Build
         run: npm run build
         env:
@@ -35,16 +52,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.API_KEY }}
           NODE_ENV: production
         continue-on-error: false
-      
-      - name: Verify API_KEY in build
-        run: |
-          if [ -z "${{ secrets.API_KEY }}" ]; then
-            echo "❌ ERROR: API_KEY secret is not set!"
-            echo "Please go to Settings > Secrets and variables > Actions and add API_KEY"
-            exit 1
-          else
-            echo "✅ API_KEY secret is set (length: ${#API_KEY} characters)"
-          fi
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
