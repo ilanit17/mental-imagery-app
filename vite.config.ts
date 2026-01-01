@@ -3,11 +3,17 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), '');
-    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || env.API_KEY || env.GEMINI_API_KEY || '';
+    // In production build, API_KEY should come from environment variable set by GitHub Actions
+    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
     
-    if (!apiKey && mode === 'production') {
-      console.warn('⚠️ Warning: API_KEY is not set. The app will not work correctly.');
+    // Log for debugging (only in build, not in runtime)
+    if (mode === 'production') {
+      if (apiKey) {
+        console.log('✅ API_KEY is set for production build (length: ' + apiKey.length + ')');
+      } else {
+        console.error('❌ ERROR: API_KEY is NOT set for production build!');
+        console.error('This will cause the app to fail. Make sure API_KEY is set in GitHub Secrets.');
+      }
     }
     
     return {
@@ -18,9 +24,12 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
+        // These will be replaced at build time
         'process.env.API_KEY': JSON.stringify(apiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(apiKey),
-        '__API_KEY__': JSON.stringify(apiKey)
+        '__API_KEY__': JSON.stringify(apiKey),
+        // Also define it on window for client-side access
+        'window.__API_KEY__': JSON.stringify(apiKey)
       },
       resolve: {
         alias: {
